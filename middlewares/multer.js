@@ -28,7 +28,17 @@ const storage = multer.diskStorage({
         //callBack(null, './public/documents')
     },
     filename: (req, file, callBack) => {
-        callBack(null, `${file.originalname}`)
+      let storageName = ''
+      for(let i = 0; i <file.originalname.length;i++){
+        if(file.originalname[i] !== ' '){
+          storageName += file.originalname[i]
+        }else{
+          storageName += '_'
+        }
+      }
+      console.log(storageName);
+      req.storageName = storageName
+        callBack(null, `${storageName}`)
     }
   })
 let upload = multer({ storage:storage})

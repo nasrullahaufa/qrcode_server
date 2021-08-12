@@ -10,7 +10,7 @@ const fileHosting = "https://sanodoc-qrcode.herokuapp.com";
 
 class documentsController {
   static async uploadDocument(req, res, next) {
-    console.log(req.files);
+    console.log(req.storageName, "controller");
     try {
       console.log(req.file, "router");
       const file = req.file;
@@ -23,20 +23,18 @@ class documentsController {
 
       console.log(file.originalname, file.destination);
       const newDocument = await Document.create({
-        name: file.originalname,
+        name: file.filename,
         storage_path: file.destination,
-        // url: `${fileHosting}/documents/download?token=${generateToken(newDocument.id)}&id=${newDocument.id}`,
+        // url: `${fileHosting}/documents/${file.filename}`,
       });
       const update = await Document.update(
         {
-          url: `${fileHosting}/documents/download?token=${generateToken(
-            newDocument.id
-          )}&id=${newDocument.id}`,
+          url: `${fileHosting}/documents/${newDocument.id}/${newDocument.name}`,
         },
         { where: { id: newDocument.id }, returning: true }
       );
       console.log(update[1][0].dataValues, "dfsdf");
-        const updatedDocument =update[1][0].dataValues
+      const updatedDocument = update[1][0].dataValues;
       let qrImage;
 
       console.log("sampe");
@@ -49,9 +47,9 @@ class documentsController {
           qrImage = url;
 
           fs.readFile(
-            `./public/documents/${updatedDocument.createdAt
+            `./public/documents/${newDocument.createdAt
               .toISOString()
-              .substring(0, 10)}/${updatedDocument.name}`,
+              .substring(0, 10)}/${file.filename}`,
             async (err, data) => {
               console.log(data);
               const pdfDoc = await PDFDocument.load(data);
@@ -74,7 +72,7 @@ class documentsController {
               fs.writeFile(
                 `./public/documents/${newDocument.createdAt
                   .toISOString()
-                  .substring(0, 10)}/${file.originalname}`,
+                  .substring(0, 10)}/${file.filename}`,
                 pdfBytes,
                 (err) => {
                   if (err) throw err;
@@ -154,13 +152,14 @@ class documentsController {
 
   static async downloadOne(req, res, next) {
     try {
-      console.log(req.query);
+      console.log(req.params);
+      const { id, name } = req.params;
 
-      const { id, token } = req.query;
-      const decoded = verifyToken(token);
-      console.log(decoded);
+      // const { id, token } = req.query;
+      // const decoded = verifyToken(token);
+      // console.log(decoded);
       console.log(id, "id");
-      const document = await Document.findByPk(id);
+      const document = await Document.findOne({where:{id,name}});
       console.log(document.createdAt);
       if (document) {
         console.log("sampe");
@@ -171,7 +170,7 @@ class documentsController {
               .toISOString()
               .substring(0, 10)}`
           ),
-          dotfiles: "deny",
+          dotfiles: "allow",
           headers: {
             "x-timestamp": Date.now(),
             "x-sent": true,
