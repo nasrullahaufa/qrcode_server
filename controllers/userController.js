@@ -14,7 +14,7 @@ class userController {
         if (isPasswordMatch) {
           const token = generateToken({ username });
           console.log(token);
-          res.status(200).json({access_token:token});
+          res.status(200).json({ access_token: token });
         } else {
           next({
             name: "BADUSERPASS",
@@ -32,32 +32,35 @@ class userController {
     }
   }
   static async changePassword(req, res, next) {
-    const{password,newPassword} = req.body
-    try{
-      console.log(req.body,req.user)
-      const user = await User.findOne({ where: { username: req.user.username } });
+    const { password, newPassword } = req.body;
+    try {
+      // console.log(req.body, req.user);
+      const user = await User.findOne({
+        where: { username: req.user.username },
+      });
 
-      console.log(user)
+      console.log(user);
       const isPasswordMatch = checkPassword(password, user.password);
-      if(isPasswordMatch){
-
-        if(newPassword.length < 6){
-          next({name:"PASSLENGTH"})
-        }else{
-
-          const encrypted = hashPassword(newPassword)
-          await User.update({password: encrypted},{where: { username: req.user.username}})
-          res.status(200).json({message:"Password Changed"})
+      if (isPasswordMatch) {
+        if (newPassword.length < 6) {
+          next({ name: "PASSLENGTH" });
+        } else {
+          const encrypted = hashPassword(newPassword);
+          await User.update(
+            { password: encrypted },
+            { where: { username: req.user.username } }
+          );
+          res.status(200).json({ message: "Password Changed" });
         }
-      }else{
+      } else {
         next({
           name: "BADUSERPASS",
           message: "Password salah",
         });
       }
-    }catch(err){
-      console.log(err)
-      next(err)
+    } catch (err) {
+      console.log(err);
+      next(err);
     }
   }
 }
